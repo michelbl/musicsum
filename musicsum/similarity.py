@@ -33,3 +33,41 @@ def similarity(filename):
    
     return cosinusTime
 
+def full_similarity(filename):
+    '''Computes the full similarity matrix
+    '''
+    
+    selectedFeatures = numpy.load(settings.DIR_SELECTED_FEATURES + filename + '.npy')
+    
+    nFeatures, timeSize = selectedFeatures.shape
+    
+    similarityMatrix = numpy.identity(timeSize)
+    for i in range(0,timeSize):
+        for j in range(i+1,timeSize):
+            pastFeatures = selectedFeatures[:,i]
+            futureFeatures = selectedFeatures[:,j]
+            innerProduct = abs(pastFeatures*futureFeatures).sum(0)
+            pastTimeNorms = abs(pastFeatures*pastFeatures).sum(0)
+            futureTimeNorms = abs(futureFeatures*futureFeatures).sum(0)
+            similarityMatrix[i,j] = innerProduct/numpy.sqrt(pastTimeNorms*futureTimeNorms)
+
+    return similarityMatrix
+
+
+def segments(similarityUpperDiag):
+    '''Detects the segments (segments are cut were the similarity falls below settings.THRESHOLD)
+    '''
+    
+    threshold = settings.THRESHOLD
+    '''elements are 1 where the similarity is above threshold, -1 otherwise'''
+    binary = numpy.where(similarityUpperDiag > threshold,1,-1)
+    segmentsIndices = 0*similarityUpperDiag
+    segmentsIndices[1:-1] = binary[0:-2]*binary[2:]
+    segmentsIndices = numpy.where(segmentsIndices < 0,1,0)
+    segmentsIndices[1:] = segmentsIndices[1:] - segmentsIndices[0:-1]
+    segmentsIndices = numpy.where(segmentsIndices > 0)
+    segmentsIndices = segmentsIndices[0]
+    
+    '''numpy.save(settings.DIR_SEGMENTS_INDICES + filename + '.npy', segmentsIndices)'''
+    
+    return segmentsIndices
