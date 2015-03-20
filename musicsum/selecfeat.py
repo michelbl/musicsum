@@ -22,6 +22,7 @@ def select_features(filename):
     '''
     
     dynamicFeatures = numpy.load(settings.DIR_DYNAMIC_FEATURES + filename + '.npy')
+    rate = numpy.load(settings.DIR_SAMPLE_RATE + filename + '.npy')
         
     nChannels, freqSize, timeSize = dynamicFeatures.shape
     
@@ -34,7 +35,8 @@ def select_features(filename):
 
     
     channelSet = range(13)
-    freqSet = [pow(2, i)-1 for i in range(int(numpy.log(freqSize)/numpy.log(2))+1)]
+    #freqSet = [pow(2, i)-1 for i in range(int(numpy.log(freqSize)/numpy.log(2))+1)]
+    freqSet = [pow(2, i)-1 for i in range(int(numpy.log(rate/2))+1)]
     selectedIndexes = itertools.product(channelSet, freqSet)
     
     flatIndexes=itertools.starmap(lambda x,y: x*freqSize+y, selectedIndexes)

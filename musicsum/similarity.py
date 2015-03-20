@@ -17,8 +17,10 @@ def similarity(filename):
    
     Returns: 0 if success
     '''
-    
-    selectedFeatures = numpy.load(settings.DIR_SELECTED_FEATURES + filename + '.npy')
+    if isinstance(filename, str):
+        selectedFeatures = numpy.load(settings.DIR_SELECTED_FEATURES + filename + '.npy')
+    else:
+        selectedFeatures = filename
     
     nFeatures, timeSize = selectedFeatures.shape
     
@@ -30,14 +32,15 @@ def similarity(filename):
     cosinusTime = innerProduct/numpy.sqrt(pastTimeNorms*futureTimeNorms)
     #plt.xticks(range(0,120,5))
     #plt.plot(numpy.arange(timeSize-1)*(120./(timeSize-1)), cosinusTime)
+    
+    if isinstance(filename, str):
+        numpy.save(settings.DIR_UPPER_DIAGONAL + filename + '.npy', cosinusTime)
    
     return cosinusTime
 
-def full_similarity(filename):
+def full_similarity(selectedFeatures):
     '''Computes the full similarity matrix
     '''
-    
-    selectedFeatures = numpy.load(settings.DIR_SELECTED_FEATURES + filename + '.npy')
     
     nFeatures, timeSize = selectedFeatures.shape
     
@@ -54,11 +57,12 @@ def full_similarity(filename):
     return similarityMatrix
 
 
-def segments(similarityUpperDiag):
+def segments_indices(filename):
     '''Detects the segments (segments are cut were the similarity falls below settings.THRESHOLD)
     '''
-    
+    similarityUpperDiag = numpy.load(settings.DIR_UPPER_DIAGONAL + filename + '.npy')
     threshold = settings.THRESHOLD
+    
     '''elements are 1 where the similarity is above threshold, -1 otherwise'''
     binary = numpy.where(similarityUpperDiag > threshold,1,-1)
     segmentsIndices = 0*similarityUpperDiag
@@ -66,6 +70,6 @@ def segments(similarityUpperDiag):
     segmentsIndices = numpy.where(segmentsIndices < 0)
     segmentsIndices = segmentsIndices[0]
     
-    '''numpy.save(settings.DIR_SEGMENTS_INDICES + filename + '.npy', segmentsIndices)'''
+    numpy.save(settings.DIR_SEGMENTS_INDICES + filename + '.npy', segmentsIndices)
     
     return segmentsIndices
