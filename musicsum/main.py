@@ -18,14 +18,18 @@ mel.compute_mfb(filename)
 dynfeat.compute_dynamic_features(filename)
 selecfeat.select_features(filename)
 similarityUpperDiag = similarity.similarity(filename)
-
+similarSegmentsInd = similarity.segments(similarityUpperDiag)
+similarityMatrix = similarity.full_similarity(filename)
 
 #plt.hist(similarityUpperDiag, bins=1000)
 nPoints = len(similarityUpperDiag)
-plt.xticks(range(0,120,5))
-plt.plot(numpy.arange(nPoints)*(120./nPoints), similarityUpperDiag)
+tmax = settings.TMAX
+plt.xticks(range(0,tmax,5))
+plt.plot(numpy.arange(nPoints)*(float(tmax)/nPoints), similarityUpperDiag)
+plt.vlines(similarSegmentsInd*(float(tmax)/nPoints),min(similarityUpperDiag),1)
 plt.show()
-
+plt.imshow(similarityMatrix)
+plt.show()
 
 
 '''
