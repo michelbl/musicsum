@@ -62,10 +62,8 @@ def segments(similarityUpperDiag):
     '''elements are 1 where the similarity is above threshold, -1 otherwise'''
     binary = numpy.where(similarityUpperDiag > threshold,1,-1)
     segmentsIndices = 0*similarityUpperDiag
-    segmentsIndices[1:-1] = binary[0:-2]*binary[2:]
-    segmentsIndices = numpy.where(segmentsIndices < 0,1,0)
-    segmentsIndices[1:] = segmentsIndices[1:] - segmentsIndices[0:-1]
-    segmentsIndices = numpy.where(segmentsIndices > 0)
+    segmentsIndices[0:-1] = binary[0:-1]*binary[1:]
+    segmentsIndices = numpy.where(segmentsIndices < 0)
     segmentsIndices = segmentsIndices[0]
     
     '''numpy.save(settings.DIR_SEGMENTS_INDICES + filename + '.npy', segmentsIndices)'''
