@@ -4,20 +4,32 @@ Created on Tue Mar 17 18:59:50 2015
 
 """
 
-DIR_SONGS = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\songs\\"
-DIR_MEL_FEATURES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\mel_features\\"
-DIR_SAMPLE_RATE = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\sample_rate\\"
-DIR_DYNAMIC_FEATURES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\dynamic_features\\"
-DIR_SELECTED_FEATURES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\selected_features\\"
-DIR_SEGMENTS_INDICES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\segments_indices\\"
-DIR_UPPER_DIAGONAL = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\upper_diagonal\\"
-DIR_POTENTIAL_STATES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\potential_states\\"
-DIR_INITIAL_STATES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\initial_states\\"
-DIR_KMEANS_STATES = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\kmeans_states\\"
-DIR_STATES_SEQUENCE = "C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\states_sequence\\"
+WINDOWS_SEPARATOR = '\\'
+LINUX_SEPARATOR = '/'
+
+MICHEL_LINUX_PREFIX = '/home/michel/git/musicsum/musicsum/'
+MICHEL_WINDOWS_PREFIX = 'C:\Users\Michel\git\musicsum\musicsum\\'
+NICO_PREFIX = 'C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\\'
+
+
+DIR_PREFIX = MICHEL_LINUX_PREFIX
+SEPARATOR = LINUX_SEPARATOR
+
+
+DIR_SONGS = DIR_PREFIX + "songs" + SEPARATOR
+DIR_MEL_FEATURES = DIR_PREFIX + "mel_features" + SEPARATOR
+DIR_SAMPLE_RATE = DIR_PREFIX + "sample_rate" + SEPARATOR
+DIR_DYNAMIC_FEATURES = DIR_PREFIX + "dynamic_features" + SEPARATOR
+DIR_SELECTED_FEATURES = DIR_PREFIX + "selected_features" + SEPARATOR
+DIR_SEGMENTS_INDICES = DIR_PREFIX + "segments_indices" + SEPARATOR
+DIR_UPPER_DIAGONAL = DIR_PREFIX + "upper_diagonal" + SEPARATOR
+DIR_POTENTIAL_STATES = DIR_PREFIX + "potential_states" + SEPARATOR
+DIR_INITIAL_STATES = DIR_PREFIX + "initial_states" + SEPARATOR
+DIR_KMEANS_STATES = DIR_PREFIX + "kmeans_states" + SEPARATOR
+DIR_STATES_SEQUENCE = DIR_PREFIX + "states_sequence" + SEPARATOR
 
 FFT_SIZE = 512
 OVERLAP = 2
 HOP = FFT_SIZE / OVERLAP
-TMAX = 120
+TMAX = 240
 THRESHOLD = 0.99

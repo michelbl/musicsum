@@ -14,21 +14,26 @@ import states
 import hmm
 from matplotlib import pyplot as plt
 
-filename = 'headoverfeet'
+filename = 'takemeout'
 
 mel.compute_mfb(filename)
+
 dynfeat.compute_dynamic_features(filename)
+
 selecfeat.select_features(filename)
-
 selectedFeatures = numpy.load(settings.DIR_SELECTED_FEATURES + filename + '.npy')
-similarityMatrix = similarity.full_similarity(selectedFeatures)
 
+similarityMatrix = similarity.full_similarity(selectedFeatures)
 similarityUpperDiag = similarity.similarity(filename)
 similarSegmentsInd = similarity.segments_indices(filename)
+
 potentialStates = states.potential_states(filename)
 potentialStatesSimilarityMatrix = similarity.full_similarity(potentialStates)
+
 initialStates = states.initial_states(filename)
+
 kMeansStates = states.statesfromKmeans(filename)
+
 statesSequence = hmm.states_sequence(filename)
 
 #plt.hist(similarityUpperDiag, bins=1000)
@@ -60,14 +65,3 @@ plt.imshow(abs(selectedFeatures), interpolation='nearest')
 #plt.plot(numpy.arange(len(statesSequence)), statesSequence)
 plt.title('Selected features sequence')
 plt.show()
-
-
-'''
-a = numpy.zeros((3,3,3))
-for i in range(3):
-    for j in range(3):
-        for k in range(3):
-            a[i,j,k] = i + 10*j + 100*k
-a.reshape((9,3))[:,0]
-
-a[:,:,0]'''

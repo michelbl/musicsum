@@ -21,7 +21,7 @@ def potential_states(filename):
         firstInd = similarSegmentsInd[i-1]
         lastInd = similarSegmentsInd[i]
         nFrames = lastInd - firstInd
-        potentialStates[:,i] = abs(selectedFeatures[:,firstInd:lastInd].sum(1)) / nFrames
+        potentialStates[:,i] = abs(selectedFeatures[:,firstInd:lastInd]).sum(1) / nFrames
         
     numpy.save(settings.DIR_POTENTIAL_STATES + filename + '.npy', potentialStates)
     

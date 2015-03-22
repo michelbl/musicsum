@@ -1,6 +1,7 @@
 import numpy
 import settings
-from sklearn import hmm
+#from sklearn import hmm
+from hmmlearn import hmm
 
 def states_sequence(filename):
 
