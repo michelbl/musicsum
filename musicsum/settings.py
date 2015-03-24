@@ -9,11 +9,11 @@ LINUX_SEPARATOR = '/'
 
 MICHEL_LINUX_PREFIX = '/home/michel/git/musicsum/musicsum/'
 MICHEL_WINDOWS_PREFIX = 'C:\Users\Michel\git\musicsum\musicsum\\'
-NICO_PREFIX = 'C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\\'
+NICO_PREFIX = 'C:\Users\Nicolas\Documents\MVA\Audio Signal Processing\projet_git_2\musicsum\musicsum\\'
 
 
-DIR_PREFIX = MICHEL_LINUX_PREFIX
-SEPARATOR = LINUX_SEPARATOR
+DIR_PREFIX = NICO_PREFIX
+SEPARATOR = WINDOWS_SEPARATOR
 
 
 DIR_SONGS = DIR_PREFIX + "songs" + SEPARATOR
@@ -28,8 +28,8 @@ DIR_INITIAL_STATES = DIR_PREFIX + "initial_states" + SEPARATOR
 DIR_KMEANS_STATES = DIR_PREFIX + "kmeans_states" + SEPARATOR
 DIR_STATES_SEQUENCE = DIR_PREFIX + "states_sequence" + SEPARATOR
 
-FFT_SIZE = 512
+FFT_SIZE = 1
 OVERLAP = 2
 HOP = FFT_SIZE / OVERLAP
-TMAX = 240
-THRESHOLD = 0.99
+TMAX = 120
+THRESHOLD = 0.90

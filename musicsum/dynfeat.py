@@ -7,6 +7,7 @@ Created on Tue Mar 17 18:59:50 2015
 import numpy
 import stft
 import settings
+from features import logfbank
 
 
 def compute_dynamic_features(filename):
@@ -45,3 +46,36 @@ def compute_dynamic_features(filename):
     
     return 0
 
+def compute_dynamic_selected_features(filename):
+    
+    melFeatures = numpy.load(settings.DIR_MEL_FEATURES + filename + '.npy')
+    tmax = settings.TMAX
+    
+    nPoints, nChannels = melFeatures.shape
+    if nChannels != 26:
+        print "Warning : 26 channels expected"
+    
+    nChannelsPerChannel = 13
+    
+    #timeSize = stft.stft_time_size(melFeatures[:,0], settings.FFT_SIZE, settings.OVERLAP)
+    #dynamic_selected_features = numpy.zeros((timeSize, nChannels / 2 * nChannelsPerChannel))
+    dynamic_selected_features = []
+    
+    for i in range(nChannels / 2):
+        #dynamic_selected_features[:, i*nChannelsPerChannel:(i+1)*nChannelsPerChannel] = logfbank(melFeatures[:,i],100,settings.FFT_SIZE, settings.FFT_SIZE / settings.OVERLAP)[:,:13]
+        A = logfbank(melFeatures[:,i],nPoints/tmax,settings.FFT_SIZE, float(settings.FFT_SIZE) / settings.OVERLAP)[:,:13]
+        if i == 0:
+            dynamic_selected_features = A
+        else:
+            dynamic_selected_features = numpy.append(dynamic_selected_features,A,axis=1)
+            
+    dynamic_selected_features = numpy.transpose(dynamic_selected_features)
+    
+    nFeatures, timeSize = dynamic_selected_features.shape
+    
+    featureVar = numpy.sqrt(abs(dynamic_selected_features*dynamic_selected_features).mean(1))
+    dynamic_selected_features = dynamic_selected_features/numpy.tile(featureVar.reshape((nFeatures,1)), (1,timeSize))
+        
+    numpy.save(settings.DIR_SELECTED_FEATURES + filename + '.npy', dynamic_selected_features)   
+    return dynamic_selected_features
+        

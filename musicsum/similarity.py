@@ -69,7 +69,9 @@ def segments_indices(filename):
     segmentsIndices[0:-1] = binary[0:-1]*binary[1:]
     segmentsIndices = numpy.where(segmentsIndices < 0)
     segmentsIndices = segmentsIndices[0]
-    
+    if len(segmentsIndices) == 0:
+        print 'Warning: all (or no) frames are similar '
+        
     numpy.save(settings.DIR_SEGMENTS_INDICES + filename + '.npy', segmentsIndices)
     
     return segmentsIndices

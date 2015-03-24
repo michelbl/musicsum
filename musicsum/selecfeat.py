@@ -40,7 +40,7 @@ def select_features(filename):
     selectedIndexes = itertools.product(channelSet, freqSet)
     
     flatIndexes=itertools.starmap(lambda x,y: x*freqSize+y, selectedIndexes)
-    selectedFeatures = dynamicFeatures.reshape(nChannels*freqSize, timeSize)[list(flatIndexes),:]
+    selectedFeatures = dynamicFeatures.reshape(nChannels*freqSize, timeSize)[list(flatIndexes),:]    
     nFeatures, timeSize = selectedFeatures.shape
     
     # Normalization/coefficient (very important)
