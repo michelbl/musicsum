@@ -32,6 +32,8 @@ def compute_mfb(filename):
         print 'Warning : the number of channels is not 2.'
     if nSamples > rate*tmax:
         sig = sig[:rate*tmax,:]  # take the 2 first minutes (for memory)
+        
+    sig = sig.mean(1)
     
     #mfcc_feat = mfcc(sig,rate)
     fbank_feat = logfbank(sig,rate)

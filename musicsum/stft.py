@@ -8,16 +8,16 @@ NB : This file is (in part) a snipet found on stackoverflow.
 import scipy
 import numpy
 
-def stft_time_size(x, fftsize=1024, overlap=4):
-    hop = fftsize / overlap
+def stft_time_size(x, fftsize, overlap):
+    hop = fftsize // overlap
     return len(range(0, len(x)-fftsize, hop))
 
 
-def stft(x, fftsize=1024, overlap=4):
+def stft(x, fftsize, overlap):
     '''Computes the Short Time Fourier Transform with sensible defaults : Hanning window, window length is a power of 2 
     '''
     
-    hop = fftsize / overlap
+    hop = fftsize // overlap
     w = scipy.hanning(fftsize+1)[:-1]      # better reconstruction with this trick +1)[:-1]  
     return numpy.array([numpy.fft.rfft(w*x[i:i+fftsize]) for i in range(0, len(x)-fftsize, hop)])
 

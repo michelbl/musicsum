@@ -28,10 +28,11 @@ def compute_dynamic_features(filename):
     if nChannels != 26:
         print "Warning : 26 channels expected"
     
-    '''    
+    '''
+    ch = 10
     power = numpy.zeros((nPoints,1))
     for i in range(nPoints):
-        power[i] = numpy.abs(melFeatures[i,:]*melFeatures[i,:]).sum()
+        power[i] = numpy.abs(melFeatures[i,ch]*melFeatures[i,ch]).sum()
     plt.xticks(range(0,120,5))
     plt.plot(numpy.arange(nPoints)*(120./nPoints), power)
     '''
