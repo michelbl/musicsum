@@ -10,7 +10,7 @@ import itertools
 import timeconv
 
 
-def select_features(filename):
+def select_features(filename, mutinf_filenames):
     '''Select the best dynamic features.
     
     Argument :
@@ -37,9 +37,10 @@ def select_features(filename):
     '''
 
     # load quality information and select the best features
-
-    mutinf = numpy.load(settings.DIR_MUTINF_FEATURES + filename + '.npy')
-
+    mutinf = numpy.zeros((nChannels, freqSize))
+    for mutinf_f in mutinf_filenames:
+        mutinf = mutinf + numpy.load(settings.DIR_MUTINF_FEATURES + mutinf_f + '.npy')
+    
     ind = numpy.unravel_index(numpy.argsort(mutinf.flatten())[-50:], mutinf.shape)
     selectedIndexes = [(ind[0][i], ind[1][i]) for i in range(50)]
     
