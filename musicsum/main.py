@@ -15,7 +15,7 @@ import hmm
 import timeconv
 from matplotlib import pyplot as plt
 
-filenames = [#'apocalypse',
+filenames = ['apocalypse',
     'familyman',
     'fernando',
     'fivemilesout',
@@ -72,13 +72,13 @@ for filename in filenames:
     plt.vlines(gtmap[:,0], min(similarityUpperDiag), 1, color='r')
     plt.title('Segmentation based on frame to frame similarity : ' + filename)
     plt.show()
-
+'''
     # plot the matrix
     factor = 100
     plt.imshow(numpy.clip(factor*similarityMatrix-(factor-1), 0, 1), interpolation='nearest')
     plt.title('Frames similarity matrix : ' + filename)
     plt.show()
-
+'''
 '''
 # compute potential states : mean over segments
 potentialStates = states.potential_states(filename)

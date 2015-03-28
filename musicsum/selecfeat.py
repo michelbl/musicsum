@@ -41,8 +41,8 @@ def select_features(filename, mutinf_filenames):
     for mutinf_f in mutinf_filenames:
         mutinf = mutinf + numpy.load(settings.DIR_MUTINF_FEATURES + mutinf_f + '.npy')
     
-    ind = numpy.unravel_index(numpy.argsort(mutinf.flatten())[-50:], mutinf.shape)
-    selectedIndexes = [(ind[0][i], ind[1][i]) for i in range(50)]
+    ind = numpy.unravel_index(numpy.argsort(mutinf.flatten())[-settings.N_FEATURES:], mutinf.shape)
+    selectedIndexes = [(ind[0][i], ind[1][i]) for i in range(settings.N_FEATURES)]
     
     ''' Select cartesian product of features
     channelSet = range(13)
@@ -62,7 +62,7 @@ def select_features(filename, mutinf_filenames):
     # Normalization/coefficient (very important)
     featureSigma = numpy.sqrt(abs(selectedFeatures*selectedFeatures).mean(1))
     #plt.plot(featureVar)
-    coef = 1/featureSigma   # normalization to 1
+    coef = mutinf[ind]/featureSigma   # normalization to 1
     #coef = numpy.sqrt(featureVar)
     #coef = numpy.ones((nFeatures, 1)) # no normalization
     selectedFeatures = selectedFeatures*numpy.tile(coef.reshape((nFeatures,1)), (1,timeSize))
