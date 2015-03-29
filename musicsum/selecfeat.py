@@ -95,6 +95,7 @@ def mutual_information_features(filename):
                 end = -1
             groundTruth[gtmap[i, 1], beginning:end] = 1
     groundTruth = groundTruth[groundTruth.sum(1)>0,:]
+    groudTruthSequence = numpy.where(groundTruth == 1)
     nPhases = groundTruth.shape[0]
     #plt.plot(range(timeSize), groundTruth[0,:], range(timeSize), groundTruth[1,:], range(timeSize), groundTruth[2,:], range(timeSize), groundTruth[3,:], range(timeSize), groundTruth[4,:], )
     

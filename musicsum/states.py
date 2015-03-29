@@ -1,8 +1,10 @@
 import numpy
 import settings
 import similarity
+import groundtruth
 from sklearn import metrics
 from sklearn.cluster import KMeans
+import new
 
 def potential_states(filename):
     
@@ -27,10 +29,10 @@ def potential_states(filename):
     
     return potentialStates
 
-def initial_states(filename):
+def initial_states(filename,threshold):
     potentialStates = numpy.load(settings.DIR_POTENTIAL_STATES + filename + '.npy')
     nFeatures, nPotentialStates = potentialStates.shape
-    threshold = settings.THRESHOLD
+    #threshold = settings.THRESHOLD_INITIAL_STATES
     initialStates = numpy.zeros((nFeatures,1))
     
     while True:
@@ -81,3 +83,59 @@ def statesfromKmeans(filename):
     numpy.save(settings.DIR_KMEANS_STATES + filename + '.npy', kMeansStates)
     
     return kMeansStates
+
+def compute_states(filename):
+    threshold = 1
+    gap = 0.001
+    
+    groundTruthSequence = groundtruth.ground_truth_sequence(filename)
+    
+    while True:
+        initialStates = initial_states(filename,threshold)
+        kMeansStates = statesfromKmeans(filename)
+        if numpy.max(groundTruthSequence) < numpy.max(kMeansStates):
+            threshold = threshold - gap
+        else:
+            old_threshold = threshold
+            threshold = threshold + gap / 2
+            break
+        
+    while True:
+        initialStates = initial_states(filename,threshold)
+        kMeansStates = statesfromKmeans(filename)
+        if numpy.max(groundTruthSequence) < numpy.max(kMeansStates):
+            gap = abs( old_threshold - threshold )
+            old_threshold = threshold
+            threshold = threshold - gap /2
+        if numpy.max(groundTruthSequence) > numpy.max(kMeansStates):
+            gap = abs( old_threshold - threshold )
+            old_threshold = threshold
+            threshold = threshold + gap / 2
+        if numpy.max(groundTruthSequence) == numpy.max(kMeansStates):
+            break
+    
+    print threshold
+    
+    return kMeansStates, groundTruthSequence
+
+def arrange_states(kMeansStates, groundTruthStates):
+    
+    arrangedStates = 0 * groundTruthStates
+    free_grd_states = range(numpy.max(groundTruthStates)+1)
+    
+    for i in range(numpy.max(groundTruthStates)+1):
+        x = numpy.where(kMeansStates == i,1,0)
+        max_common = 0
+        for j in free_grd_states:
+            y = numpy.where(groundTruthStates == j,1,0)
+            common = (x * y).sum()
+            if common >= max_common:
+                arg_max_common = j
+                max_common = common
+        ind = numpy.where(kMeansStates == i)
+        ind = ind[0]
+        arrangedStates[ind] = arg_max_common
+        if len(free_grd_states) > 1:
+            free_grd_states = numpy.delete(free_grd_states,numpy.where(free_grd_states==arg_max_common),0)
+        
+    return arrangedStates
