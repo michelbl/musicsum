@@ -1,0 +1,1237 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\float_placement H
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Toward Automatic Music Audio Summary Generation from Signal Analysis
+\end_layout
+
+\begin_layout Author
+Nicolas Ayroles, Michel Blancard
+\end_layout
+
+\begin_layout Section*
+Introduction
+\end_layout
+
+\begin_layout Standard
+Music summarization refers to the process of discovering the structure of
+ a song.
+ In our case, it implies mainly separating dissimilar segments of music
+ and linking similar segments.
+ Automatic summarization is a problem of great importance for online music
+ distribution platforms and music search engines.
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Peeters02towardautomatic"
+
+\end_inset
+
+, Geoffroy Peeters, Amaury La Burthe and Xavier Rodet propose a two-fold
+ approach to automatically discovering the structure of a popular music
+ song.
+ In a first step, an initial set of states are derived from a first pass
+ of the music.
+ The segmentation is improved in a second step by modeling the structure
+ with a hidden Markov model.
+ Both passes rely on features computed from the original audio signal and
+ selected during a supervised learning phase.
+\end_layout
+
+\begin_layout Standard
+This report describes the pipeline we implemented, based on the work of
+ Geoffroy Peeters, Amaury La Burthe and Xavier Rodet.
+\end_layout
+
+\begin_layout Section*
+Mel filter bank
+\end_layout
+
+\begin_layout Standard
+The first step to obtain features is to apply the Mel-scale filter bank
+ to the original signal.
+ This consists in computing the short term (windowed) Fourier transform
+ (with a window size of 0.025s and a step of 0.01s), binning the Fourier coefficie
+nts in 26 channels and computing the logarithm of the magnitude of these
+ 26 sums.
+ The 26 bins are scattered on the frequency space following the Mel scale,
+ a logarithmic scale that aims to reflect the humain ear's response.
+ That is why the Mel features are very popular in the Automated Speech Recogniti
+on field.
+\end_layout
+
+\begin_layout Standard
+We used the python package 'python_speech_features' to compute the Mel features.
+ This package performs a pre-emphasis (high-pass filter) before the Fourier
+ tranform and the binning.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename mel_channels_headoverfeet.png
+	lyxscale 30
+	width 10cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+3 Mel channels on the song 'Head over feet'
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:mel"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Dynamic features
+\end_layout
+
+\begin_layout Standard
+In order to find states, the variations of the Mel features are more indicative
+ than just their values at one date.
+ This dynamic information can be exploited by computing the short term Fourier
+ tranform of the Mel features, resulting in 
+\begin_inset Quotes eld
+\end_inset
+
+dynamic
+\begin_inset Quotes erd
+\end_inset
+
+ features.
+\end_layout
+
+\begin_layout Standard
+The size of the window is crucial : a short window will produce more precise
+ -but more varying- features than a long window would produce.
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:windowsize"
+
+\end_inset
+
+ shows the similarity matrices obtained with different window sizes.
+ We found that a window size of 1024 samples, corresponding to 10 seconds
+ of music) is a good compromize.
+ With a step of 102 frames, the output features have a sampling rate of
+ about 1Hz.
+ This is much more convenient to process than the original 100Hz features,
+ especially for computing the full similarity matrix.
+\end_layout
+
+\begin_layout Section*
+Feature selection
+\end_layout
+
+\begin_layout Standard
+With a window size of 1024 frames, 512 dynamic features are obtained from
+ a single Mel channel.
+ This gives a total of 13312 dynamic features.
+ Unfortunately, only a tiny fraction of these features are informative in
+ our context.
+ The majority of non-informative features alter the quality of the similarity
+ measure between frames, leading to poor results during the segmentation
+ stage of the pipeline.
+\end_layout
+
+\begin_layout Standard
+One way to eliminate this burden is to assess the quality of each feature
+ using manually entered structures for a certain number of songs.
+ First, we studied 21 popular music songs from several artists belonging
+ to several genres.
+ The structure of a song is noted by a sequence of pairs (begin, id) where
+ 'begin' is the date of the begining of a segment and 'id' is a state id,
+ a number identical for similar segments.
+ For each state 
+\begin_inset Formula $s$
+\end_inset
+
+, a ground truth vector 
+\begin_inset Formula $g_{s}\left(t\right)$
+\end_inset
+
+ is equal to 1 if the song is in state 
+\begin_inset Formula $s$
+\end_inset
+
+ at time 
+\begin_inset Formula $t$
+\end_inset
+
+ and 0 otherwise.
+ Then the mutual information can be estimated between 
+\begin_inset Formula $g_{s}$
+\end_inset
+
+ and each dynamic feature.
+ Mutual information estimation is a non-trivial problem, especially for
+ continuous variables when the samples are small.
+ To overcome this difficulty, we binned the values of each feature in 10
+ bins uniformely distributed between the minimal value and the maximal value
+ of that feature.
+ This way, the distribution becomes discrete and a summation formula can
+ be applied to compute the mutual information, at the price of a loss in
+ precision.
+ This estimation could be improved by using sophisticated bias-reduction
+ techniques.
+ The score of a features is the sum of the mutual information with every
+ state, for every song in the training dataset.
+\end_layout
+
+\begin_layout Standard
+Experiments on our labeled dataset showed that the results are best when
+ 20 to 50 features are selected.
+ We weight the features proportionnaly to their score, however this makes
+ not much difference compared to the equal normalization of all the selected
+ features.
+\end_layout
+
+\begin_layout Standard
+Of course, we took care to always exclude the tested song from the training
+ dataset used.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename headoverfeet_selected_features.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_selected_features.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_selected_features.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_selected_features.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Selected features for the songs 'Head over feet', 'If I ever feel better',
+ 'Shadow on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Selected-features-for"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Similarity matrix
+\end_layout
+
+\begin_layout Standard
+The full similarity matrix is computed by measuring the similarity between
+ two frames, according to their respective features.
+ We use the well known cosinus similarity measure.
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:windowsize"
+
+\end_inset
+
+ illustrates the importance of the choice of the window size.
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:similaritymatrices"
+
+\end_inset
+
+ shows the similarity matrix that we obtained for 4 songs.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename similarity_matrix_128.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename similarity_matrix_1024.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Small window (128 frames) vs large window (1024 frames) on he song 'Head
+ over feet'
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:windowsize"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename headoverfeet_similarity_matrix.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_similarity_matrix.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_similarity_matrix.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_similarity_matrix.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Similarity matrices for the songs 'Head over feet', 'If I ever feel better',
+ 'Shadow on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:similaritymatrices"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Segmentation
+\end_layout
+
+\begin_layout Standard
+The upper (or lower) diagonal contains the frame to frame similarity measures.
+ It is of much interest for our problem, as it is supposed to display values
+ close to 1 except when the song goes from one state to another.
+ A first segmentation can be obtained by selecting dates where the frame
+ to frame similarity crosses a threshold (0.9995 to 0.9999 in our case).
+ In 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:upperdiag"
+
+\end_inset
+
+, the guessed segmentation (in black) can be compared to the ground truth
+ (in blue).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename headoverfeet_upper_diagonal.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_upper_diagonal.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_upper_diagonal.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_upper_diagonal.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Upper diagonal for the songs 'Head over feet', 'If I ever feel better',
+ 'Shadow on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:upperdiag"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Potential states
+\end_layout
+
+\begin_layout Standard
+For each of these segments, we define a 
+\emph on
+potential state
+\emph default
+ caracterized by the mean value of the feature vector over the segment.
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:potential-states"
+
+\end_inset
+
+ shows the 
+\emph on
+potential states
+\emph default
+ we obtained.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename headoverfeet_potential_states.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_potential_states.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_potential_states.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_potential_states.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Potential states for the songs 'Head over feet', 'If I ever feel better',
+ 'Shadow on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:potential-states"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Initial states
+\end_layout
+
+\begin_layout Standard
+The next step is to build the similarity matrix of the 
+\emph on
+potential states
+\emph default
+ we have just computed.
+ This allows us to compare all the 
+\emph on
+potential states
+\emph default
+ pairwise and group them if they have a similarity greater than the same
+ high threshold used for the segments definition.
+ The means of the 
+\emph on
+potential states
+\emph default
+ grouped together define what we call the
+\emph on
+ initial states
+\emph default
+ plotted on figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:initial-states"
+
+\end_inset
+
+.
+ We note 
+\begin_inset Formula $K$
+\end_inset
+
+ the number of 
+\emph on
+initial states
+\emph default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename headoverfeet_initial_states.png
+	lyxscale 30
+	height 5cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_initial_states.png
+	lyxscale 30
+	height 5cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_initial_states.png
+	lyxscale 30
+	height 5cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_initial_states.png
+	lyxscale 30
+	height 5cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Initial states for the songs 'Head over feet', 'If I ever feel better',
+ 'Shadow on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:initial-states"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+\begin_inset Formula $K$
+\end_inset
+
+-means
+\end_layout
+
+\begin_layout Standard
+These 
+\emph on
+initial states
+\emph default
+ are used for the initialisation of the
+\emph on
+ 
+\begin_inset Formula $K$
+\end_inset
+
+
+\emph default
+-means algorithm which is run on the frames.
+ This means that after the 
+\begin_inset Formula $K$
+\end_inset
+
+-means algorithm has been run, each frame is assigned a label 
+\begin_inset Formula $i\in\left\{ 1\dots K\right\} $
+\end_inset
+
+ corresponding to the most similar 
+\emph on
+initial state
+\emph default
+.
+ This allows to define a first state sequence over the song as shown on
+ figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:k-means"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+However, this assignment does not take into account the temporal ordering
+ of the frames.
+ Indeed, each frame has been assigned to the most similar 
+\emph on
+initial states
+\emph default
+ independently from its temporal position and from the state assigned to
+ its neighbouring frames.
+ This does not reflect to nature of music as a song is not merely a sequence
+ of independent frames but rather a structured sequence of interdependent
+ states.
+ We thus improve our approach further by exploiting a Hidden Markov Model
+ (HMM).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename headoverfeet_kmeans.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_kmeans.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_kmeans.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_kmeans.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Sequence of states from 
+\begin_inset Formula $K$
+\end_inset
+
+-means for the songs 'Head over feet', 'If I ever feel better', 'Shadow
+ on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:k-means"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Hidden Markov Model
+\end_layout
+
+\begin_layout Standard
+In our case, the HMM defines a temporal sequence.
+ Each instant 
+\begin_inset Formula $t$
+\end_inset
+
+ is caracterized by one of the 
+\begin_inset Formula $K$
+\end_inset
+
+ states defined previously.
+ The model specifies the probability at each time 
+\begin_inset Formula $t$
+\end_inset
+
+ of being in the state 
+\begin_inset Formula $i$
+\end_inset
+
+ depending on the state 
+\begin_inset Formula $j$
+\end_inset
+
+ at instant 
+\begin_inset Formula $t-1$
+\end_inset
+
+.
+ It also gives the probabily of observing the feature vector 
+\begin_inset Formula $f\left(t\right)$
+\end_inset
+
+ at instant 
+\begin_inset Formula $t$
+\end_inset
+
+ depending on the state 
+\begin_inset Formula $i$
+\end_inset
+
+ at instant 
+\begin_inset Formula $t$
+\end_inset
+
+.
+ Since we only observe 
+\begin_inset Formula $f\left(t\right)$
+\end_inset
+
+ and not the actual state 
+\begin_inset Formula $i$
+\end_inset
+
+, the variable describing the state is said to be hidden.
+ In order to define the model, we thus need to explicit the transition probabiti
+es from one state to another and the probability density function describing
+ the relation between the hidden state and the observed feature vector.
+ The model is trained on the observed feature vector of the song.
+ We assume a gaussian probability density function.
+ Once the model is trained, we can compute the most probable state sequence
+ given the observed feature vectors.
+ This was done with the Viterbi algorithm.
+\end_layout
+
+\begin_layout Standard
+On the results plotted on figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:hmm"
+
+\end_inset
+
+, we can see that the HMM takes into account the temporal ordering of the
+ frame and thus tend to smooth the state sequence.
+ This allows to correct some errors that occured in the 
+\begin_inset Formula $K$
+\end_inset
+
+-means.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename headoverfeet_hmm.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename ifieverfeelbetter_hmm.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename shadowontheworld_hmm.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename sos_hmm.png
+	lyxscale 30
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Sequence of states from HMM for the songs 'Head over feet', 'If I ever feel
+ better', 'Shadow on the wall, 'SOS' (Abba)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:hmm"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Conclusion
+\end_layout
+
+\begin_layout Standard
+We have seen the method proposed by Rodet and al.
+ in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Peeters02towardautomatic"
+
+\end_inset
+
+.
+ This method consists in extracting features from the audio signal at very
+ short time scale with the Mel features.
+ In order to take into account the evolution of these features over time,
+ the STFT of the Mel features is computed over 10 seconds.
+ In order to study the similarity between the frames and find the most discrimin
+ative features, the mutual information between each feature and a set of
+ labeled states is computed.
+ We then seek to group the features by similarity in order to identify the
+ number of states in the song.
+ This allows us to run a 
+\begin_inset Formula $K$
+\end_inset
+
+-means algorithm and assign a state to each feature vector.
+ Finally, a HMM is run to better account for the temporal ordering of the
+ feature vectors and to get a smoother sequence of states.
+\end_layout
+
+\begin_layout Standard
+We achieved good results on some songs.
+ We shall however precise that we were not able to get such good results
+ on all songs.
+ One of the reason might be the size on our training set, which contains
+ 21 songs only.
+ Setting the value of the similarity threshold is also challenging.
+ In our experiment, its value was chosen manually and we used the same value
+ for every song.
+ Defining a rule to measure the correctness of the threshold and automatically
+ adapt it to each song is a possible source of improvement.
+ Finally, we noticed that the frame to frame similarity is not adapted to
+ all musical genres.
+ Indeed, for songs with a complex structure, many instruments and/or many
+ variations, it is very difficult to build a good measure of similarity
+ as the MFCC values vary a lot.
+ Exploring distance measures between feature vectors other than the cosinus
+ and consider other audio features should also be tried.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+btprint "btPrintAll"
+bibfiles "biblio"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
